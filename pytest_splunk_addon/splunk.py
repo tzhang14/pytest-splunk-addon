@@ -120,6 +120,14 @@ def docker_compose_files(pytestconfig):
 
     return [docker_compose_path]
 
+@pytest.fixture(scope="session")
+def get_requirements_file(pytestconfig,request):
+    requirements_file_path = request.config.getoption("splunk_app")
+    file_path = os.path.join(
+      str(requirements_file_path), "cim_requirements.log"
+     )
+    LOGGER.info("cim requirements file path: %s", requirements_file_path)
+    return file_path
 
 def is_responsive_splunk(splunk):
     """
