@@ -2,14 +2,11 @@
 import logging
 import pytest
 import pprint
-
 INTERVAL = 3
 RETRIES = 3
 
-
 class Basic:
-    logger = logging.getLogger()
-
+    logger = logging.getLogger() 
     @pytest.mark.splunk_addon_searchtime
     def test_connection_splunk(self,splunk_search_util):
         search = "search (index=_audit) daysago=60| head 5"
@@ -21,21 +18,24 @@ class Basic:
         assert result
 
     @pytest.mark.splunk_addon_searchtime
-    def test_requirement(self, get_requirements_file):
+    def test_requirement(self,splunk_search_util, get_model_name, get_event,caplog):
         """
         Test case to pick requirements.txt
         This test case checks props stanza is not empty, blank and dash value.
         Args:
         """
-        self.logger.debug(f"In test requirement test{get_requirements_file}")
-        f = open(get_requirements_file, "r")
-        contents =f.read()
-        self.logger.debug(contents)
-        result  = False
+        # f = open(get_requirements_file, "r")
+        # contents =f.read()
+        # self.logger.debug(contents)
+        caplog.set_level(logging.DEBUG)
+        self.logger.info(f" modelname {get_model_name}")
+        self.logger.debug(f" event {get_event}")
+        model = str(get_model_name[0])
         # run search
-        # result = splunk_search_util.checkQueryCountIsGreaterThanZero(
-        #     search, interval=INTERVAL, retries=RETRIES
-        # )
+        search =f"| datamodel {model}  search | search sourcetype=cisco:asa {get_event}"
+        result = splunk_search_util.checkQueryCountIsGreaterThanZero(
+            search, interval=INTERVAL, retries=RETRIES
+        )
         assert result
 
     # @pytest.mark.splunk_addon_internal_errors
@@ -80,11 +80,11 @@ class Basic:
     #     """
 
     #     record_property(splunk_app_props["field"], splunk_app_props["value"])
-    #     search = (
-    #         f"search (index=_internal OR index=*) AND "
-    #         f"{splunk_app_props['field']}="
-    #         f"\"{splunk_app_props['value']}\""
-    #     )
+        # search = (
+        #     f"search (index=_internal OR index=*) AND "
+        #     f"{splunk_app_props['field']}="
+        #     f"\"{splunk_app_props['value']}\""
+        # )
     #     self.logger.debug(f"Executing the search query: {search}")
     #     # run search
     #     result = splunk_search_util.checkQueryCountIsGreaterThanZero(
@@ -177,7 +177,7 @@ class Basic:
     #     assert result
 
 
-    # # This test will check if there is at least one event with specified tags
+    # This test will check if there is at least one event with specified tags
     # @pytest.mark.splunk_addon_searchtime
     # def test_tags(
     #     self, splunk_search_util, splunk_app_tags, record_property, caplog

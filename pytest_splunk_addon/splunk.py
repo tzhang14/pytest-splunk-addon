@@ -16,11 +16,59 @@ import splunklib.client as client
 from .helmut.manager.jobs import Jobs
 from .helmut.splunk.cloud import CloudSplunk
 from .helmut_lib.SearchUtil import SearchUtil
-
+from xml.etree import cElementTree as ET
 RESPONSIVE_SPLUNK_TIMEOUT = 3600  # seconds
 
 LOGGER = logging.getLogger("pytest_splunk_addon")
 
+# @pytest.fixture(scope="session")
+# def get_requirements_file(pytestconfig,request):
+#     requirements_file_path = request.config.getoption("splunk_app")
+#     file_path = os.path.join(
+#       str(requirements_file_path), "cim_requirements.log"
+#      )
+#     LOGGER.info("cim requirements file path: %s", requirements_file_path)
+#     return file_path
+
+#fetches root
+def fetch_model_names_xml(file_name):
+    root = None
+    tree = ET.parse(file_name)
+    root = tree.getroot()
+    model_list = []
+    for model in root.iter('model'):
+        model_list.append(str(model.text))
+    return model_list
+
+def get_event_requirement_file(file_name):
+    root = None
+    tree = ET.parse(file_name)
+    root = tree.getroot()
+    for raw in root.iter('raw'):
+        event = raw.text
+    return event
+
+@pytest.fixture(scope="session")
+def get_model_name(pytestconfig,request):
+    requirements_file_path = request.config.getoption("splunk_app")
+    file_path = os.path.join(
+      str(requirements_file_path), "cim_requirements.log"
+    )
+    req_file = open(file_path, "r")
+    model_names = fetch_model_names_xml(req_file)
+    LOGGER.info("model_name: %s", model_names)
+    return model_names
+
+@pytest.fixture(scope="session")
+def get_event(pytestconfig,request):
+    requirements_file_path = request.config.getoption("splunk_app")
+    file_path = os.path.join(
+      str(requirements_file_path), "cim_requirements.log"
+    )
+    req_file = open(file_path, "r")
+    event = get_event_requirement_file(req_file)
+    LOGGER.info("event:%s", event)
+    return event
 
 def pytest_addoption(parser):
     """Add options for interaction with Splunk this allows the tool to work in two modes
@@ -120,14 +168,7 @@ def docker_compose_files(pytestconfig):
 
     return [docker_compose_path]
 
-@pytest.fixture(scope="session")
-def get_requirements_file(pytestconfig,request):
-    requirements_file_path = request.config.getoption("splunk_app")
-    file_path = os.path.join(
-      str(requirements_file_path), "cim_requirements.log"
-     )
-    LOGGER.info("cim requirements file path: %s", requirements_file_path)
-    return file_path
+
 
 def is_responsive_splunk(splunk):
     """
