@@ -21,6 +21,20 @@ RESPONSIVE_SPLUNK_TIMEOUT = 3600  # seconds
 
 LOGGER = logging.getLogger("pytest-splunk-addon")
 
+@pytest.fixture(scope="session")
+def fetch_cimreq_location(pytestconfig,request):
+    package_path = request.config.getoption("splunk_app")
+    folder_path = os.path.join(
+      str(package_path), "cim_reqs"
+    )
+    file_list = []
+    for file in os.listdir(folder_path):
+        filename = os.path.join(folder_path, file)
+        if filename.endswith(".log"):
+            file_list.append(filename)
+    LOGGER.info("file_list -----: %s", file_list)
+    return file_list               
+
 def fetch_model_names_xml(file_name):
     root = None
     tree = ET.parse(file_name)
@@ -52,7 +66,7 @@ def model(request):
 def get_model_name(pytestconfig,request):
     requirements_file_path = request.config.getoption("splunk_app")
     file_path = os.path.join(
-      str(requirements_file_path), "cim_requirements.log"
+      str(requirements_file_path), "cim_reqs/cisco_req.log"
     )
     req_file = open(file_path, "r")
     model_names = fetch_model_names_xml(req_file)
@@ -63,7 +77,7 @@ def get_model_name(pytestconfig,request):
 def get_event(pytestconfig,request):
     requirements_file_path = request.config.getoption("splunk_app")
     file_path = os.path.join(
-      str(requirements_file_path), "cim_requirements.log"
+      str(requirements_file_path), "cim_reqs/cisco_req.log"
     )
     req_file = open(file_path, "r")
     event = get_event_requirement_file(req_file)
