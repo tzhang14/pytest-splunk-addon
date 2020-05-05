@@ -22,7 +22,7 @@ RESPONSIVE_SPLUNK_TIMEOUT = 3600  # seconds
 LOGGER = logging.getLogger("pytest-splunk-addon")
 
 @pytest.fixture(scope="session")
-def fetch_cimreq_location(pytestconfig,request):
+def fetch_cimreq_location(request):
     package_path = request.config.getoption("splunk_app")
     folder_path = os.path.join(
       str(package_path), "cim_reqs"

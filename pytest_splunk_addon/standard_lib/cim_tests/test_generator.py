@@ -5,9 +5,12 @@ Generates test cases to verify the CIM compatibility .
 import pytest
 import json
 import os.path as op
+import os
 from . import DataModelHandler
 from ..addon_parser import AddonParser
 from ..addon_parser import Field
+import logging
+from random import random
 
 
 class CIMTestGenerator(object):
@@ -24,7 +27,7 @@ class CIMTestGenerator(object):
         common_fields_path (str): 
             Relative or absolute path of the json file with common fields
     """
-
+    logger = logging.getLogger()
     COMMON_FIELDS_PATH = "CommonFields.json"
 
     def __init__(
@@ -38,6 +41,7 @@ class CIMTestGenerator(object):
         self.data_model_handler = DataModelHandler(data_model_path)
         self.addon_parser = AddonParser(addon_path)
         self.test_field_type = test_field_type
+        self.addon_path = addon_path
         self.common_fields_path = common_fields_path or op.join(
             op.dirname(op.abspath(__file__)), self.COMMON_FIELDS_PATH
         )
@@ -59,6 +63,23 @@ class CIMTestGenerator(object):
             yield from self.generate_field_extractions_test()
         elif fixture.endswith("not_allowed_in_search"):
             yield from self.generate_fields_event_count_test()
+        elif fixture.endswith("reqs"):
+            yield from self.generate_cim_req_files()
+        
+
+    def id_gen(self):
+        return random()
+
+    def generate_cim_req_files(self):
+        folder_path = op.join(str(self.addon_path), "cim_reqs")
+        file_list = []
+        for file1 in os.listdir(folder_path):
+            filename = os.path.join(folder_path, file1)
+            logging.info("---Filename {}".format(filename))
+            if filename.endswith(".log"):
+                file_list.append(filename)
+                yield pytest.param(filename,
+                id=str(self.id_gen()))
 
     def get_mapped_datasets(self):
         """
