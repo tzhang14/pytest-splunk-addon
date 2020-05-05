@@ -79,7 +79,7 @@ class CIMTestGenerator(object):
             if filename.endswith(".log"):
                 file_list.append(filename)
                 yield pytest.param(filename,
-                id=str(self.id_gen()))
+                id=str(filename))
 
     def get_mapped_datasets(self):
         """
