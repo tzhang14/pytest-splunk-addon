@@ -2,7 +2,6 @@ import pytest
 import json
 import logging
 import os
-import random 
 from xml.etree import cElementTree as ET
 
 LOGGER = logging.getLogger("pytest-splunk-addon")
@@ -56,6 +55,8 @@ class ReqsTestGenerator(object):
                 event_no = 0
                 for event_tag in root.iter('event'):
                     event = self.get_event(event_tag)
+                    event = self.escape_char_event(event)
+                    logging.info("{}".format(event))   
                     model_list = self.get_models(event_tag)
                     for model in model_list:
                         model = model.replace(" ", "_")
@@ -90,4 +91,11 @@ class ReqsTestGenerator(object):
             yield(x)
 
     def escape_char_event(self,event):
-        pass
+       event = event.replace("\\", "\\\\")
+       event = event.replace("=", "\=")
+       return event
+    #    escape_splunk_chars = ["`", "~", "!","@", "#","$", "%", 
+    #    "%", "^","&","*","(",")","-","+","|","[","]","}","{","|",
+    #    ";",":","'","<",">","?"]
+    #    for character in escape_splunk_chars:
+    #         event = event.replace(character,"\\"+ character)
