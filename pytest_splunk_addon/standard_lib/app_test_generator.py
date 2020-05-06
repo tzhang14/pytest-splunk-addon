@@ -7,6 +7,7 @@ import logging
 import os
 from .fields_tests import FieldTestGenerator
 from .cim_tests import CIMTestGenerator
+from .requirement_tests import ReqsTestGenerator
 
 LOGGER = logging.getLogger("pytest-splunk-addon")
 
@@ -37,6 +38,10 @@ class AppTestGenerator(object):
             self.pytest_config.getoption("splunk_app"),
             self.pytest_config.getoption("splunk_dm_path") or data_model_path,
         )
+        LOGGER.debug("Initializing ReqsTestGenerator to generate the test cases")
+        self.requirement_test_generator = ReqsTestGenerator(
+            self.pytest_config.getoption("splunk_app"),
+        )
 
     def generate_tests(self, fixture):
         """
@@ -54,6 +59,8 @@ class AppTestGenerator(object):
             )
         elif fixture.startswith("splunk_searchtime_cim"):
             yield from self.dedup_tests(self.cim_test_generator.generate_tests(fixture))
+        elif fixture.startswith("splunk_searchtime_requirement"):
+            yield from self.dedup_tests(self.requirement_test_generator.generate_tests(fixture))
 
     def dedup_tests(self, test_list):
         """
