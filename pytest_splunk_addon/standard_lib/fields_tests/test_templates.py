@@ -43,7 +43,7 @@ class FieldTestTemplates(object):
 
     @pytest.mark.splunk_searchtime_fields
     @pytest.mark.splunk_searchtime_fields_positive
-    def test_props_fields_positive(
+    def test_props_fields(
         self, splunk_search_util, splunk_searchtime_fields_positive, record_property
     ):
         """
@@ -56,7 +56,7 @@ class FieldTestTemplates(object):
             caplog (fixture): fixture to capture logs.
         """
 
-        # Search Query
+        # Search Query 
         record_property("stanza_name", splunk_searchtime_fields_positive["stanza"])
         record_property("stanza_type", splunk_searchtime_fields_positive["stanza_type"])
         record_property("fields", splunk_searchtime_fields_positive["fields"])
@@ -91,7 +91,7 @@ class FieldTestTemplates(object):
 
     @pytest.mark.splunk_searchtime_fields
     @pytest.mark.splunk_searchtime_fields_negative
-    def test_props_fields_negative(
+    def test_props_fields_no_dash_not_empty(
         self, splunk_search_util, splunk_searchtime_fields_negative, record_property
     ):
         """
@@ -108,7 +108,7 @@ class FieldTestTemplates(object):
                 fixture to capture logs.
         """
 
-        # Search Query
+        # Search Query 
         record_property("stanza_name", splunk_searchtime_fields_negative["stanza"])
         record_property("stanza_type", splunk_searchtime_fields_negative["stanza_type"])
         record_property("fields", splunk_searchtime_fields_negative["fields"])
@@ -119,12 +119,13 @@ class FieldTestTemplates(object):
             f"{splunk_searchtime_fields_negative['stanza']}\""
         )
 
+        fields_search = []
         for field_dict in splunk_searchtime_fields_negative["fields"]:
             field = Field(field_dict)
             negative_values = ", ".join([f'"{each}"' for each in field.negative_values])
 
-            search = search + f" AND ({field} IN ({negative_values}))"
-
+            fields_search.append(f"({field} IN ({negative_values}))")
+        search += " AND ({})".format(" OR ".join(fields_search))
         self.logger.info(f"Executing the search query: {search}")
 
         # run search
@@ -206,12 +207,12 @@ class FieldTestTemplates(object):
         Returns:
             Asserts whether test case passes or fails.
         """
-        record_property("eventtype", splunk_searchtime_fields_eventtypes["stanza"])
-        search = (
-            f"search (index=_internal OR index=*) AND "
-            f"eventtype="
-            f"\"{splunk_searchtime_fields_eventtypes['stanza']}\""
+        record_property(
+            "eventtype", splunk_searchtime_fields_eventtypes["stanza"]
         )
+        search = (f"search (index=_internal OR index=*) AND "
+                  f"eventtype="
+                  f"\"{splunk_searchtime_fields_eventtypes['stanza']}\"")
 
         self.logger.info(
             "Testing eventtype =%s", splunk_searchtime_fields_eventtypes["stanza"]
