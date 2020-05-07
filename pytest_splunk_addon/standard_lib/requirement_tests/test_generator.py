@@ -1,3 +1,6 @@
+"""
+Generates test cases to verify the event analytics logs. 
+"""
 import pytest
 import json
 import logging
@@ -8,11 +11,8 @@ LOGGER = logging.getLogger("pytest-splunk-addon")
 
 class ReqsTestGenerator(object):
     """
-    Generates test cases to test the knowledge objects of an Add-on.
-    * Provides the pytest parameters to the test templates.
-    * Supports field_bank: List of fields with patterns and expected
-        values which should be tested for the Add-on.
-    
+    Generates test cases to test the events in the log files of the event anlytics folder
+    * Provides the pytest parameters to the test_templates.py.   
     Args:
         app_path (str): Path of the app package
     """
@@ -28,9 +28,8 @@ class ReqsTestGenerator(object):
         supported fixtures:
         Args:
             fixture(str): fixture name
-
         """
-        if fixture.endswith("cim"):
+        if fixture.endswith("file"):
             yield from self.generate_cim_req_files()
         elif fixture.endswith("param"):
             yield from self.generate_cim_req_params()
@@ -47,48 +46,81 @@ class ReqsTestGenerator(object):
                 id=str(filename))
 
     def generate_cim_req_params(self):
+        """
+        Generate & Yield pytest.param for each test case.
+        Params = Model_name with respective Event  
+        """
+        model = None
+        event = None
+        req_test_id = 0
         for file1 in os.listdir(self.folder_path):
             filename = os.path.join(self.folder_path, file1)
             logging.info("--generate cim params-Filename {}".format(filename))
             if filename.endswith(".log"):
-                root = self.get_root(filename)
-                event_no = 0
-                for event_tag in root.iter('event'):
-                    event = self.get_event(event_tag)
-                    event = self.escape_char_event(event)
-                    logging.info("{}".format(event))   
-                    model_list = self.get_models(event_tag)
-                    for model in model_list:
-                        model = model.replace(" ", "_")
-                        event_no = event_no + 1
-                        yield pytest.param(
-                        {
-                                "model": model,
-                                "event": event,
-                        },
-                            id=f"{model}::{filename}::Event_No::{event_no}",
-                        )             
+                try:
+                    abc = self.check_xml_format(filename)
+                    root = self.get_root(filename)
+                    for event_tag in root.iter('event'):
+                        event = self.get_event(event_tag)
+                        event = self.escape_char_event(event)
+                        logging.info("{}".format(event))   
+                        model_list = self.get_models(event_tag)
+                        for model in model_list:
+                            model = model.replace(" ", "_")
+                            req_test_id = req_test_id + 1
+                            yield pytest.param(
+                            {
+                                    "model": model,
+                                    "event": event,
+                                    "filename":filename,
+                            },
+                                id=f"{model}::{filename}::req_test_id::{req_test_id}",
+                            )
+                except Exception:
+                    logging.info("--check xml true or not {}".format(abc))
+                    req_test_id = req_test_id + 1
+                    yield pytest.param(
+                    {
+                        "model": None,
+                        "event": None,
+                        "filename":filename,
+                    },
+                        id=f"{model}::{filename}::req_test_id::{req_test_id}",
+                    )
 
     def get_models(self,root):
+        """
+        Input: Root of the xml file
+        Function to return list of models in each event of the log file
+        """
         model_list=[]
         for model in root.iter('model'):
             model_list.append(str(model.text))
         return model_list
 
     def get_event(self,root):
+        """
+        Input: Root of the xml file
+        Function to return raw event string
+        """
         event = None
         for raw in root.iter('raw'):
             event = raw.text
         return event
 
     def get_root(self,filename):
+        """
+        Input: Filename ending with .log extension
+        Function to return raw event string
+        """
         tree = ET.parse(filename)
         root = tree.getroot()
         return root
 
-    def yield_test(self):
-        for x in range(3, 6):
-            yield(x)
+    def check_xml_format(self,file_name):
+        if(ET.parse(file_name)):
+            return True
+        
 
     def escape_char_event(self,event):
        event = event.replace("\\", "\\\\")
