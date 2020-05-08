@@ -20,7 +20,7 @@ class ReqsTestGenerator(object):
     def __init__(self, app_path):
         logging.info("initializing ReqsTestGenerator class")
         self.package_path = app_path
-        self.folder_path = os.path.join(str(self.package_path), "event_analytics")
+        #self.folder_path = os.path.join(str(self.package_path), "event_analytics")
 
     def generate_tests(self, fixture):
         """
@@ -36,14 +36,15 @@ class ReqsTestGenerator(object):
         
     def generate_cim_req_files(self):
         file_list = []
-        #self.generate_cim_req_params()
-        for file1 in os.listdir(self.folder_path):
-            filename = os.path.join(self.folder_path, file1)
-            logging.info("---Filename {}".format(filename))
-            if filename.endswith(".log"):
-                file_list.append(filename)
-                yield pytest.param(filename,
-                id=str(filename))
+        folder_path = os.path.join(str(self.package_path), "event_analytics")
+        if os.path.isdir(folder_path):
+            for file1 in os.listdir(folder_path):
+                filename = os.path.join(folder_path, file1)
+                logging.info("---Filename {}".format(filename))
+                if filename.endswith(".log"):
+                    file_list.append(filename)
+                    yield pytest.param(filename,
+                    id=str(filename))
 
     def generate_cim_req_params(self):
         """
@@ -53,40 +54,42 @@ class ReqsTestGenerator(object):
         model = None
         event = None
         req_test_id = 0
-        for file1 in os.listdir(self.folder_path):
-            filename = os.path.join(self.folder_path, file1)
-            logging.info("--generate cim params-Filename {}".format(filename))
-            if filename.endswith(".log"):
-                try:
-                    abc = self.check_xml_format(filename)
-                    root = self.get_root(filename)
-                    for event_tag in root.iter('event'):
-                        event = self.get_event(event_tag)
-                        event = self.escape_char_event(event)
-                        logging.info("{}".format(event))   
-                        model_list = self.get_models(event_tag)
-                        for model in model_list:
-                            model = model.replace(" ", "_")
-                            req_test_id = req_test_id + 1
-                            yield pytest.param(
-                            {
-                                    "model": model,
-                                    "event": event,
-                                    "filename":filename,
-                            },
-                                id=f"{model}::{filename}::req_test_id::{req_test_id}",
-                            )
-                except Exception:
-                    logging.info("--check xml true or not {}".format(abc))
-                    req_test_id = req_test_id + 1
-                    yield pytest.param(
-                    {
-                        "model": None,
-                        "event": None,
-                        "filename":filename,
-                    },
-                        id=f"{model}::{filename}::req_test_id::{req_test_id}",
-                    )
+        folder_path = os.path.join(str(self.package_path), "event_analytics")
+        if os.path.isdir(folder_path):
+            for file1 in os.listdir(folder_path):
+                filename = os.path.join(folder_path, file1)
+                logging.info("--generate cim params-Filename {}".format(filename))
+                if filename.endswith(".log"):
+                    try:
+                        abc = self.check_xml_format(filename)
+                        root = self.get_root(filename)
+                        for event_tag in root.iter('event'):
+                            event = self.get_event(event_tag)
+                            event = self.escape_char_event(event)
+                            logging.info("{}".format(event))   
+                            model_list = self.get_models(event_tag)
+                            for model in model_list:
+                                model = model.replace(" ", "_")
+                                req_test_id = req_test_id + 1
+                                yield pytest.param(
+                                {
+                                        "model": model,
+                                        "event": event,
+                                        "filename":filename,
+                                },
+                                    id=f"{model}::{filename}::req_test_id::{req_test_id}",
+                                )
+                    except Exception:
+                        logging.info("--check xml true or not {}".format(abc))
+                        req_test_id = req_test_id + 1
+                        yield pytest.param(
+                        {
+                            "model": None,
+                            "event": None,
+                            "filename":filename,
+                        },
+                            id=f"{model}::{filename}::req_test_id::{req_test_id}",
+                        )
 
     def get_models(self,root):
         """
@@ -123,11 +126,15 @@ class ReqsTestGenerator(object):
         
 
     def escape_char_event(self,event):
-       event = event.replace("\\", "\\\\")
-       event = event.replace("=", "\=")
-       return event
-    #    escape_splunk_chars = ["`", "~", "!","@", "#","$", "%", 
-    #    "%", "^","&","*","(",")","-","+","|","[","]","}","{","|",
-    #    ";",":","'","<",">","?"]
-    #    for character in escape_splunk_chars:
-    #         event = event.replace(character,"\\"+ character)
+         """
+        Input: Event getting parsed
+        Function to escape special characters in Splunk 
+        https://docs.splunk.com/Documentation/StyleGuide/current/StyleGuide/Specialcharacters
+        """
+        escape_splunk_chars = ["\\","`", "~", "!","@", "#","$", "%", 
+        "^","&","*","(",")","-","=","+","[","]","}","{","|",
+        ";",":","'","\"","\,","<",">","\/","?"]
+        for character in escape_splunk_chars:
+            event = event.replace(character,'\\'+ character)
+            logging.info("{}".format(event))
+        return event
