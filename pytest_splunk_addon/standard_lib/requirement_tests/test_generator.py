@@ -5,7 +5,9 @@ import pytest
 import json
 import logging
 import os
+import configparser
 from xml.etree import cElementTree as ET
+
 
 LOGGER = logging.getLogger("pytest-splunk-addon")
 
@@ -36,6 +38,7 @@ class ReqsTestGenerator(object):
         
     def generate_cim_req_files(self):
         file_list = []
+        self.extractRegexTransforms()
         folder_path = os.path.join(str(self.package_path), "event_analytics")
         if os.path.isdir(folder_path):
             for file1 in os.listdir(folder_path):
@@ -126,7 +129,7 @@ class ReqsTestGenerator(object):
         
 
     def escape_char_event(self,event):
-         """
+        """
         Input: Event getting parsed
         Function to escape special characters in Splunk 
         https://docs.splunk.com/Documentation/StyleGuide/current/StyleGuide/Specialcharacters
@@ -138,3 +141,15 @@ class ReqsTestGenerator(object):
             event = event.replace(character,'\\'+ character)
             logging.info("{}".format(event))
         return event
+
+    def extractRegexTransforms(self):
+        parser = configparser.ConfigParser()
+        transforms_path = os.path.join(str(self.package_path), "default/transforms.conf")
+        parser.read_file(open(transforms_path))
+        for x in parser.sections():
+            logging.info("{}".format(x)) 
+
+        t = parser['force_sourcetype_for_cisco_asa']['DEST_KEY']
+        logging.info("{}".format(t))   
+
+        return
