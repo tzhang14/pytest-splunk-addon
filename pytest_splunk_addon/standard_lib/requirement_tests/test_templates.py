@@ -21,9 +21,15 @@ class ReqsTestTemplates(object):
         filename = splunk_searchtime_requirement_param["filename"]
         sourcetype = splunk_searchtime_requirement_param["sourcetype"]
 
+        if ((model == None) and (escaped_event != None)):
+            logging.info("No model present in file")
+            assert False
         if ((model == None) or (escaped_event == None)):
             logging.info("Issue parsing log file")
             logging.info("Filename {}".format(filename))
+            assert False
+        if (sourcetype == None):
+            logging.info("Issue finding sourcetype")
             assert False
         
         #adding to ingest data

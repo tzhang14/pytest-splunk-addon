@@ -58,8 +58,6 @@ class ReqsTestGenerator(object):
         Generate & Yield pytest.param for each test case.
         Params = Model_name with respective Event  
         """
-        model = None
-        event = None
         req_test_id = 0
         src_regex =[]
         src_regex = self.extractRegexTransforms()
@@ -70,14 +68,20 @@ class ReqsTestGenerator(object):
                 logging.info("--generate cim params-Filename {}".format(filename))
                 if filename.endswith(".log"):
                     try:
+                        model = None
+                        escaped_event = None
+                        unescaped_event = None
+                        sourcetype = None
                         abc = self.check_xml_format(filename)
                         root = self.get_root(filename)
                         for event_tag in root.iter('event'):
-                            event = self.get_event(event_tag)
-                            sourcetype = self.extractSourcetype(src_regex, event)
-                            escaped_event = self.escape_char_event(event)
-                            #logging.info("{}".format(event))   
+                            unescaped_event = self.get_event(event_tag)
+                            sourcetype = self.extractSourcetype(src_regex, unescaped_event)
+                            escaped_event = self.escape_char_event(unescaped_event)  
                             model_list = self.get_models(event_tag)
+                            if(len(model_list) == 0):
+                                raise Exception
+                            logging.info("Model{}".format(model_list))
                             for model in model_list:
                                 model = model.replace(" ", "_")
                                 req_test_id = req_test_id + 1
@@ -85,7 +89,7 @@ class ReqsTestGenerator(object):
                                 {
                                         "model": model,
                                         "escaped_event": escaped_event,
-                                        "unescaped_event": event,
+                                        "unescaped_event": unescaped_event,
                                         "filename":filename,
                                         "sourcetype":sourcetype,
                                 },
@@ -96,9 +100,11 @@ class ReqsTestGenerator(object):
                         req_test_id = req_test_id + 1
                         yield pytest.param(
                         {
-                            "model": None,
-                            "escaped_event": None,
+                            "model": model,
+                            "escaped_event": escaped_event,
+                            "unescaped_event": unescaped_event,
                             "filename":filename,
+                            "sourcetype":sourcetype,
                         },
                             id=f"{model}::{filename}::req_test_id::{req_test_id}",
                         )
@@ -147,7 +153,6 @@ class ReqsTestGenerator(object):
         ";",":","'","\"","\,","<",">","\/","?"]
         for character in escape_splunk_chars:
             event = event.replace(character,'\\'+ character)
-            #logging.info("{}".format(event))
         return event
 
     def extractRegexTransforms(self):
@@ -178,9 +183,9 @@ class ReqsTestGenerator(object):
         Input: event, List of SrcRegex
         Return:Sourcetype of the event
         """
+        sourcetype = None
         for regex_src_obj in list_src_regex:
             regex_match = re.search(regex_src_obj.regex_src, event)
             if(regex_match):
                 _,sourcetype = str(regex_src_obj.source_type).split('::',1)
-                #logging.info("{}".format(sourcetype))
         return sourcetype
