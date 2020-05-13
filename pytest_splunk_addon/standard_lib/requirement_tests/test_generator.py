@@ -7,9 +7,14 @@ import logging
 import os
 import configparser
 from xml.etree import cElementTree as ET
+import re
 
 
 LOGGER = logging.getLogger("pytest-splunk-addon")
+class SrcRegex(object):
+    def __init__(self):
+        self.regex_src = None
+        self.source_type = None
 
 class ReqsTestGenerator(object):
     """
@@ -18,7 +23,6 @@ class ReqsTestGenerator(object):
     Args:
         app_path (str): Path of the app package
     """
-
     def __init__(self, app_path):
         logging.info("initializing ReqsTestGenerator class")
         self.package_path = app_path
@@ -43,7 +47,7 @@ class ReqsTestGenerator(object):
         if os.path.isdir(folder_path):
             for file1 in os.listdir(folder_path):
                 filename = os.path.join(folder_path, file1)
-                logging.info("---Filename {}".format(filename))
+                #logging.info("---Filename {}".format(filename))
                 if filename.endswith(".log"):
                     file_list.append(filename)
                     yield pytest.param(filename,
@@ -57,6 +61,8 @@ class ReqsTestGenerator(object):
         model = None
         event = None
         req_test_id = 0
+        src_regex =[]
+        src_regex = self.extractRegexTransforms()
         folder_path = os.path.join(str(self.package_path), "event_analytics")
         if os.path.isdir(folder_path):
             for file1 in os.listdir(folder_path):
@@ -68,8 +74,9 @@ class ReqsTestGenerator(object):
                         root = self.get_root(filename)
                         for event_tag in root.iter('event'):
                             event = self.get_event(event_tag)
-                            event = self.escape_char_event(event)
-                            logging.info("{}".format(event))   
+                            sourcetype = self.extractSourcetype(src_regex, event)
+                            escaped_event = self.escape_char_event(event)
+                            #logging.info("{}".format(event))   
                             model_list = self.get_models(event_tag)
                             for model in model_list:
                                 model = model.replace(" ", "_")
@@ -77,8 +84,10 @@ class ReqsTestGenerator(object):
                                 yield pytest.param(
                                 {
                                         "model": model,
-                                        "event": event,
+                                        "escaped_event": escaped_event,
+                                        "unescaped_event": event,
                                         "filename":filename,
+                                        "sourcetype":sourcetype,
                                 },
                                     id=f"{model}::{filename}::req_test_id::{req_test_id}",
                                 )
@@ -88,7 +97,7 @@ class ReqsTestGenerator(object):
                         yield pytest.param(
                         {
                             "model": None,
-                            "event": None,
+                            "escaped_event": None,
                             "filename":filename,
                         },
                             id=f"{model}::{filename}::req_test_id::{req_test_id}",
@@ -126,8 +135,7 @@ class ReqsTestGenerator(object):
     def check_xml_format(self,file_name):
         if(ET.parse(file_name)):
             return True
-        
-
+    
     def escape_char_event(self,event):
         """
         Input: Event getting parsed
@@ -139,22 +147,40 @@ class ReqsTestGenerator(object):
         ";",":","'","\"","\,","<",">","\/","?"]
         for character in escape_splunk_chars:
             event = event.replace(character,'\\'+ character)
-            logging.info("{}".format(event))
+            #logging.info("{}".format(event))
         return event
 
     def extractRegexTransforms(self):
+        """
+        Requirement : app transform.conf
+        Return: SrcRegex objects list containing pair of regex and sourcetype 
+        """
         parser = configparser.ConfigParser(interpolation=None)
         transforms_path = os.path.join(str(self.package_path), "default/transforms.conf")
         parser.read_file(open(transforms_path))
+        list_src_regex = []
         for stanza in parser.sections():
-            logging.info("Section : {}".format(stanza)) 
             stanza_keys=list(parser[stanza].keys())
+            obj = SrcRegex()
             if ("dest_key" in stanza_keys):
-                for key in stanza_keys:
-                    key_value = str(parser[stanza][key])
-                    logging.info("Key :{}".format(key)) 
-                    logging.info("Value:{}".format(key_value))
-        #t = parser[x]['DEST_KEY']
-        #logging.info("{}".format(y))   
+                if (str(parser[stanza]["dest_key"]) == "MetaData:Sourcetype"):
+                    for key in stanza_keys:
+                        key_value = str(parser[stanza][key])
+                        if (key == "regex"):
+                            obj.regex_src = key_value
+                        if (key == "format"):
+                            obj.source_type = key_value
+                    list_src_regex.append(obj)            
+        return list_src_regex
 
-        return
+    def extractSourcetype(self,list_src_regex,event):
+        """
+        Input: event, List of SrcRegex
+        Return:Sourcetype of the event
+        """
+        for regex_src_obj in list_src_regex:
+            regex_match = re.search(regex_src_obj.regex_src, event)
+            if(regex_match):
+                _,sourcetype = str(regex_src_obj.source_type).split('::',1)
+                #logging.info("{}".format(sourcetype))
+        return sourcetype
