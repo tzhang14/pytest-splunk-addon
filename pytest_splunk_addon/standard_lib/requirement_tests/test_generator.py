@@ -143,13 +143,18 @@ class ReqsTestGenerator(object):
         return event
 
     def extractRegexTransforms(self):
-        parser = configparser.ConfigParser()
+        parser = configparser.ConfigParser(interpolation=None)
         transforms_path = os.path.join(str(self.package_path), "default/transforms.conf")
         parser.read_file(open(transforms_path))
-        for x in parser.sections():
-            logging.info("{}".format(x)) 
-
-        t = parser['force_sourcetype_for_cisco_asa']['DEST_KEY']
-        logging.info("{}".format(t))   
+        for stanza in parser.sections():
+            logging.info("Section : {}".format(stanza)) 
+            stanza_keys=list(parser[stanza].keys())
+            if ("dest_key" in stanza_keys):
+                for key in stanza_keys:
+                    key_value = str(parser[stanza][key])
+                    logging.info("Key :{}".format(key)) 
+                    logging.info("Value:{}".format(key_value))
+        #t = parser[x]['DEST_KEY']
+        #logging.info("{}".format(y))   
 
         return
