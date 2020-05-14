@@ -2,6 +2,7 @@
 import logging
 import pytest
 import os
+import time
 INTERVAL = 0
 RETRIES = 0
 
@@ -33,12 +34,14 @@ class ReqsTestTemplates(object):
             assert False
         
         #adding to ingest data
-        search = f"|makeresults |eval _raw = \"{unescaped_event}\" |collect index=main sourcetype={sourcetype} source=test1234"
+        search = f"|makeresults |eval _raw = \"{unescaped_event}\" |collect index=main sourcetype={sourcetype} source=pytest"
         result1 = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
         )
+        while not result1:
+            time.sleep(1)
         #to check the datamodel
-        search =f"| datamodel {model}  search | search  {escaped_event}"
+        search =f"| datamodel {model}  search | search source=pytest {escaped_event}"
         result = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
         )
