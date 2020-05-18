@@ -31,7 +31,6 @@ class ReqsTestGenerator(object):
     def generate_tests(self, fixture):
         """
         Generate the test cases based on the fixture provided 
-        supported fixtures:
         Args:
             fixture(str): fixture name
         """
@@ -47,7 +46,6 @@ class ReqsTestGenerator(object):
         if os.path.isdir(folder_path):
             for file1 in os.listdir(folder_path):
                 filename = os.path.join(folder_path, file1)
-                #logging.info("---Filename {}".format(filename))
                 if filename.endswith(".log"):
                     file_list.append(filename)
                     yield pytest.param(filename,
@@ -65,7 +63,6 @@ class ReqsTestGenerator(object):
         if os.path.isdir(folder_path):
             for file1 in os.listdir(folder_path):
                 filename = os.path.join(folder_path, file1)
-                logging.info("--generate cim params-Filename {}".format(filename))
                 if filename.endswith(".log"):
                     try:
                         model = None
@@ -81,7 +78,6 @@ class ReqsTestGenerator(object):
                             model_list = self.get_models(event_tag)
                             if(len(model_list) == 0):
                                 raise Exception
-                            logging.info("Model{}".format(model_list))
                             for model in model_list:
                                 model = model.replace(" ", "_")
                                 req_test_id = req_test_id + 1

@@ -2,7 +2,6 @@
 import logging
 import pytest
 import os
-import time
 INTERVAL = 0
 RETRIES = 0
 
@@ -31,14 +30,12 @@ class ReqsTestTemplates(object):
             logging.info("Issue finding sourcetype")
             assert result
         
-        # adding to ingest data
+        #ingest data
         search = f"|makeresults |eval _raw = \"{unescaped_event}\" |collect index=main sourcetype={sourcetype} source=pytest"
         ingest_flag = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
         )
-        while not ingest_flag:
-            time.sleep(1)
-        #to check the datamodel
+        #test data model
         search =f"| datamodel {model}  search | search source=pytest {escaped_event}"
         result = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
