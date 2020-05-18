@@ -2,8 +2,8 @@
 import logging
 import pytest
 import os
-INTERVAL = 0
-RETRIES = 0
+INTERVAL = 3
+RETRIES = 3
 
 class ReqsTestTemplates(object):
     """
@@ -36,7 +36,7 @@ class ReqsTestTemplates(object):
             search, interval=INTERVAL, retries=RETRIES
         )
         #test data model
-        search =f"| datamodel {model}  search | search source=pytest {escaped_event}"
+        search =f"| datamodel {model}  search | search source=pytest sourcetype={sourcetype} {escaped_event}"
         result = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
         )
