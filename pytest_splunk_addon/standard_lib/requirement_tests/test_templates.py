@@ -4,6 +4,7 @@ import pytest
 import os
 INTERVAL = 3
 RETRIES = 3
+import time
 
 class ReqsTestTemplates(object):
     """
@@ -20,24 +21,28 @@ class ReqsTestTemplates(object):
         sourcetype = splunk_searchtime_requirement_param["sourcetype"]
         result = False
         if model is None and escaped_event is None:
-            logging.info("Issue parsing log file")
-            logging.info("Filename {}".format(filename))
-            assert result
+            self.logger.info("Issue parsing log file {}".format(filename))
+            pytest.skip('Issue parsing log file')
         if model is None and escaped_event is not None:
-            logging.info("No model present in file")
-            assert result
+            self.logger.info("No model present in file")
+            pytest.skip('No model present in file')
         if sourcetype is None:
-            logging.info("Issue finding sourcetype")
+            self.logger.info("Issue finding sourcetype")
             assert result
         
         #ingest data
+        indextime = int(time.time())
         search = f"|makeresults |eval _raw = \"{unescaped_event}\" |collect index=main sourcetype={sourcetype} source=pytest"
-        ingest_flag = splunk_search_util.checkQueryCountIsGreaterThanZero(
+        ingest_search = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
         )
+        self.logger.info(f"Result of ingest search: {ingest_search}")
         #test data model
-        search =f"| datamodel {model}  search | search source=pytest sourcetype={sourcetype} {escaped_event}"
+        search =f"| datamodel {model}  search | search source=pytest sourcetype={sourcetype} {escaped_event} |search  _indextime>={indextime}"
         result = splunk_search_util.checkQueryCountIsGreaterThanZero(
             search, interval=INTERVAL, retries=RETRIES
         )
-        assert result
+        assert result, (
+            f"No result found for the search.\nsearch={search}\n"
+            f"interval={INTERVAL}, retries={RETRIES}"
+        )
