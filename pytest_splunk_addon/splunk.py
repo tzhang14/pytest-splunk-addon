@@ -424,15 +424,19 @@ def sc4s_docker(docker_services, tmp_path_factory, worker_id):
 
 
 @pytest.fixture(scope="session")
-def sc4s_external(request):
+def sc4s_external(request, docker_services):
     """
     Provides IP of the sc4s server and related ports based on pytest-args(splunk_type)
     TODO: For splunk_type=external, data will not be ingested as 
     manual configurations are required.
     """
-    ports = {514: int(request.config.getoption("sc4s_port"))}
-    for x in range(5000, 5050):
-        ports.update({x: x})
+    
+    os.environ["SPLUNK_HEC_URL"] = request.config.getoption("splunk_hec_scheme")+'://'+request.config.getoption("splunk_host")+':'+request.config.getoption("splunk_hec")
+    docker_services.start("sc4s")
+
+    ports = {514: docker_services.port_for("sc4s", 514)}
+    for x in range(5000, 5007):
+        ports.update({x: docker_services.port_for("sc4s", x)})
 
     return request.config.getoption("sc4s_host"), ports
 
@@ -500,7 +504,7 @@ def splunk_ingest_data(request, splunk_hec_uri, sc4s):
         ingest_meta_data = {
             "session_headers": splunk_hec_uri[0].headers,
             "splunk_hec_uri": splunk_hec_uri[1],
-            "splunk_host": sc4s[0],  # for sc4s
+            "sc4s_host": sc4s[0],  # for sc4s
             "sc4s_port": sc4s[1][514]  # for sc4s
         }
         IngestorHelper.ingest_events(ingest_meta_data, addon_path, config_path)
