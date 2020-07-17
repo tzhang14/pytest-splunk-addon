@@ -431,12 +431,10 @@ def sc4s_external(request, docker_services):
     manual configurations are required.
     """
     
-    os.environ["SPLUNK_HEC_URL"] = request.config.getoption("splunk_hec_scheme")+'://'+request.config.getoption("splunk_host")+':'+request.config.getoption("splunk_hec")
-    docker_services.start("sc4s")
-
-    ports = {514: docker_services.port_for("sc4s", 514)}
-    for x in range(5000, 5007):
-        ports.update({x: docker_services.port_for("sc4s", x)})
+    #os.environ["SPLUNK_HEC_URL"] = request.config.getoption("splunk_hec_scheme")+'://'+request.config.getoption("splunk_host")+':'+request.config.getoption("splunk_hec")
+    ports = {514: int(request.config.getoption("sc4s_port"))}
+    for x in range(5000, 5050):
+        ports.update({x: x})
 
     return request.config.getoption("sc4s_host"), ports
 
