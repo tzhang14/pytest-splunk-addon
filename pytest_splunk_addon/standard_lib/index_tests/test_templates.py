@@ -215,15 +215,29 @@ class IndexTimeTestTemplate(object):
             "tokenized_event"].time_values]
         result_fields["e_time"].sort()
         key_time.sort()
-
+        result_time = result_fields["e_time"]
         record_property("time_values", key_time)
         record_property("result_time", result_fields)
 
-        assert (
-            result_fields["e_time"] == key_time
-        ), "Actual time {} :: Time in result {}".format(
-            key_time, result_fields["e_time"]
-        )
+        if not result_time == key_time:
+            if len(result_time) > len(key_time):
+                assert False, "Result contains more time values then expected"
+            elif len(result_time) < len(key_time):
+                assert False, "Result contains less time values then expected"
+            else:
+                index = 0
+                # common = list()
+                result_time_diff = list()
+                key_time_diff = list()
+                for event_time in result_time:
+                    if event_time != key_time[index]:
+                        # common.append(event_time)
+                        result_time_diff.append(event_time)
+                        key_time_diff.append(key_time[index])
+                    index = index + 1
+                assert (
+                    len(result_time_diff) == 0 and len(key_time_diff) == 0
+                ), (f"Time in result : {result_time_diff} :: Actual Time : {key_time_diff}")
 
 
     @pytest.mark.first
