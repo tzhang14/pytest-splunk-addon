@@ -604,7 +604,7 @@ def is_responsive_hec(request, splunk):
                 verify=False,
             )
         LOGGER.debug("Status code: {}".format(response.status_code))
-        if response.status_code in (200,201):
+        if response.status_code != 500:
             LOGGER.info("Splunk HEC is responsive.")
             return True
     except Exception as e:
