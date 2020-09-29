@@ -73,7 +73,7 @@ def test_splunk_connection_external(testdir):
         "--splunk-type=external",
         f"--splunk-host=splunk",
         f"--splunk-port=8089",
-        f"--splunk-hec-token=70b6ae71-76b3-4c38-9597-0c5b37ad9630",
+        f"--splunk-hec-token=00000000-0000-0000-0000-000000000000",
         "-v",
     )
 
