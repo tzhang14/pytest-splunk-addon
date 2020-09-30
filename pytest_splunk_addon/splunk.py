@@ -421,13 +421,13 @@ def splunk_external(request):
 
     if not is_responsive_splunk(splunk_info):
         raise Exception(
-            "Could not connect to the external Splunk Instance"
-            "Please check the log file for possible errors."
+            "Could not connect to the external Splunk Instance."
+            " Please check the log file for possible errors."
         )
     if not is_responsive_hec(request, splunk_info):
         raise Exception(
-            "Could not connect to the external Splunk Instance"
-            "Please check the log file for possible errors."
+            "Could not connect to Splunk HEC."
+            " Please check the log file for possible errors."
         )
     return splunk_info
 
@@ -596,7 +596,7 @@ def is_responsive_hec(request, splunk):
             "Authorization": f'Splunk {request.config.getoption("splunk_hec_token")}'
         }
         response = requests.post(
-                "{}/{}".format(f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}/services/collector', "raw"),
+                "{}://{}:{}/services/collector/raw".format(request.config.getoption("splunk_hec_scheme"),splunk["forwarder_host"],splunk["port_hec"]),
                 auth=None,
                 data={"event":"test_is_responsive_hec"},
                 headers=session_headers,
@@ -604,6 +604,7 @@ def is_responsive_hec(request, splunk):
                 verify=False,
             )
         LOGGER.debug("Status code: {}".format(response.status_code))
+        LOGGER.debug("HEC URL: {}://{}:{}/services/collector/raw".format(request.config.getoption("splunk_hec_scheme"),splunk["forwarder_host"],splunk["port_hec"]))
         if response.status_code in (200,201):
             LOGGER.info("Splunk HEC is responsive.")
             return True
