@@ -618,7 +618,7 @@ def is_responsive_hec(request, splunk):
             LOGGER.info("Splunk HEC is responsive.")
             return True
         else:
-            return false
+            return False
     except Exception as e:
         LOGGER.warning(
             "Could not connect to Splunk HEC. Will try again. exception=%s", str(e),
