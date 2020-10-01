@@ -604,23 +604,25 @@ def is_responsive_hec(request, splunk):
         session_headers = {
             "Authorization": f'Splunk {request.config.getoption("splunk_hec_token")}'
         }
+        if request.config.getoption("splunk_hec_url"):
+            uri = request.config.getoption("splunk_hec_url")
+        else:
+            uri = f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}'
+        LOGGER.info("Fetched splunk_hec_uri=%s", uri)
         response = requests.post(
-                "{}/{}".format(f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}/services/collector', "raw"),
-                auth=None,
-                data={"event":"test_is_responsive_hec"},
-                headers=session_headers,
-                params={"index":"_internal"},
-                verify=False,
+                f"{uri}/services/collector/health/1.0",
+                headers=session_headers
             )
         LOGGER.debug("Status code: {}".format(response.status_code))
         if response.status_code in (200,201):
             LOGGER.info("Splunk HEC is responsive.")
             return True
+        else:
+            return False
     except Exception as e:
         LOGGER.warning(
             "Could not connect to Splunk HEC. Will try again. exception=%s", str(e),
         )
-        return False
     
 
 def is_responsive(url):
@@ -640,6 +642,7 @@ def is_responsive(url):
         if response.status_code != 500:
             LOGGER.info("Connected to the url")
             return True
+        
     except ConnectionError as e:
         LOGGER.warning(
             "Could not connect to url yet. Will try again. exception=%s", str(e),
