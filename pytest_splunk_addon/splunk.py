@@ -608,10 +608,9 @@ def is_responsive_hec(request, splunk):
             uri = request.config.getoption("splunk_hec_url")
         else:
             uri = f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}'
-        LOGGER.info("Fetched splunk_hec_uri=%s", uri)
-        response = requests.post(
-                f"{uri}/services/collector/health/1.0",
-                headers=session_headers
+        response = requests.get(
+                f'{uri}/services/collector/health/1.0',
+                verify=False,
             )
         LOGGER.debug("Status code: {}".format(response.status_code))
         if response.status_code in (200,201):
@@ -623,6 +622,7 @@ def is_responsive_hec(request, splunk):
         LOGGER.warning(
             "Could not connect to Splunk HEC. Will try again. exception=%s", str(e),
         )
+        return False
     
 
 def is_responsive(url):
