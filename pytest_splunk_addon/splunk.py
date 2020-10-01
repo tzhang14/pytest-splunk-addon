@@ -432,7 +432,7 @@ def splunk_external(request):
         )
     if not is_responsive_hec(request, splunk_info):
         raise Exception(
-            "Could not connect to the external Splunk Instance"
+            "Could not connect to Splunk HEC"
             "Please check the log file for possible errors."
         )
     return splunk_info
@@ -494,7 +494,7 @@ def splunk_hec_uri(request, splunk):
         "Authorization": f'Splunk {request.config.getoption("splunk_hec_token")}'
     }
     if request.config.getoption("splunk_hec_url"):
-        uri = request.config.getoption("splunk_hec_url")
+        uri = f'{request.config.getoption("splunk_hec_url")}/services/collector'
     else:
         uri = f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}/services/collector'
     LOGGER.info("Fetched splunk_hec_uri=%s", uri)
@@ -608,6 +608,8 @@ def is_responsive_hec(request, splunk):
             uri = request.config.getoption("splunk_hec_url")
         else:
             uri = f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}'
+        LOGGER.info("HEC URL {}".format(uri))
+        
         response = requests.get(
                 f'{uri}/services/collector/health/1.0',
                 verify=False,
