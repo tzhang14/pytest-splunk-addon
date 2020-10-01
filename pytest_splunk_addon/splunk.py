@@ -96,6 +96,12 @@ def pytest_addoption(parser):
         help='Splunk HTTP event collector token. default is "9b741d03-43e9-4164-908b-e09102327d22" If an external forwarder is used provide HEC token of forwarder.',
     )
     group.addoption(
+        "--splunk-hec-url",
+        action="store",
+        dest="splunk_hec_url",
+        help='Splunk HEC url for the Splunk Instance where events will be ingested. If an external forwarder is used provide HEC url of forwarder.',
+    )
+    group.addoption(
         "--splunk-port",
         action="store",
         dest="splunkd_port",
@@ -487,7 +493,10 @@ def splunk_hec_uri(request, splunk):
     splunk_session.headers = {
         "Authorization": f'Splunk {request.config.getoption("splunk_hec_token")}'
     }
-    uri = f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}/services/collector'
+    if request.config.getoption("splunk_hec_url"):
+        uri = request.config.getoption("splunk_hec_url")
+    else:
+        uri = f'{request.config.getoption("splunk_hec_scheme")}://{splunk["forwarder_host"]}:{splunk["port_hec"]}/services/collector'
     LOGGER.info("Fetched splunk_hec_uri=%s", uri)
 
     return splunk_session, uri
